@@ -615,7 +615,7 @@ static void init(void) {
   layer_add_child(window_get_root_layer(window), event_status_layer);
 
   // Event layers init - from ModernCalendar 
-  event_layer = text_layer_create(GRect(28, 55, 90, 20));
+  event_layer = text_layer_create(GRect(10, 55, 124, 20));
   text_layer_set_text_color(event_layer, GColorBlack);
   text_layer_set_text_alignment(event_layer, GTextAlignmentCenter);
   text_layer_set_background_color(event_layer, GColorClear);
@@ -623,7 +623,7 @@ static void init(void) {
   layer_add_child(window_get_root_layer(window), text_layer_get_layer(event_layer));
 	layer_set_hidden(text_layer_get_layer(event_layer), true);
 
-  event_layer2 = text_layer_create(GRect(28, 38, 90, 20));
+  event_layer2 = text_layer_create(GRect(10, 38, 124, 20));
   text_layer_set_text_color(event_layer2, GColorBlack);
   text_layer_set_text_alignment(event_layer2, GTextAlignmentCenter);
   text_layer_set_background_color(event_layer2, GColorClear);

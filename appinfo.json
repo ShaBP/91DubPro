@@ -24,11 +24,6 @@
                 "type": "png"
             },
             {
-                "file": "images/branding-mask-invert.png",
-                "name": "IMAGE_BRANDING_MASK_INVERT",
-                "type": "png"
-            },
-            {
                 "file": "images/branding-mask.png",
                 "name": "IMAGE_BRANDING_MASK",
                 "type": "png"
@@ -39,11 +34,6 @@
                 "type": "png"
             },
             {
-                "file": "images/background-invert.png",
-                "name": "IMAGE_BACKGROUND_INVERT",
-                "type": "png"
-            },
-            {
                 "file": "images/background.png",
                 "name": "IMAGE_BACKGROUND",
                 "type": "png"
@@ -51,11 +41,6 @@
             {
                 "file": "images/icon_bluetooth.png",
                 "name": "IMAGE_BLUETOOTH",
-                "type": "png"
-            },
-            {
-                "file": "images/icon_meter.png",
-                "name": "IMAGE_METER_BAR",
                 "type": "png"
             },
             {
@@ -284,7 +269,7 @@
     "shortName": "91DubPro",
     "uuid": "07034ac2-ec47-4bff-93cd-4082d144472d",
     "versionCode": 10,
-    "versionLabel": "1.0",
+    "versionLabel": "1.1",
     "watchapp": {
         "watchface": true
     }
