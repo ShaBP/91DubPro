@@ -1,7 +1,7 @@
 91DubPro
 ========
 
-A version of oviwan's popular 91DubPro integrated with Baeumle's great Smartwatch Pro functionality
+A version of oviwan's popular 91DubPro Pebble Watchface supporting the functionality of Baeumle's great Smartwatch Pro iPhone companion app
 
 91 Dub Pro is an integration by ShaBP of two separate watchfaces:
   91 Dub by orviwan (one of the most popular Watchfaces on Pebble Store)
