@@ -69,14 +69,16 @@ void set_relative_desc(int num, int32_t alert_event) {
   char relative_temp[21];
   if (alert_event == 0)
        strncpy(relative_temp, "Now", sizeof(relative_temp));
-  else if (alert_event < 120000)
-       snprintf(relative_temp, sizeof(relative_temp), "In 1 min");
-  else if (alert_event < 3600000)
+  else if (alert_event < 120000) // less than 2 min
+       snprintf(relative_temp, sizeof(relative_temp), "In about a min");
+  else if (alert_event <= 3600000) // less than an hour or exactly 1 hour (60 mins)
        snprintf(relative_temp, sizeof(relative_temp), "In %ld mins", alert_event / 60000);
-  else if (alert_event < 7200000)
-       snprintf(relative_temp, sizeof(relative_temp), "In 1 hour");
-  else
+  else if (alert_event < 7200000) // less than 2 hours
+       snprintf(relative_temp, sizeof(relative_temp), "In 1 hour %ld mins", alert_event/60000-(alert_event/3600000*60));
+  else if (alert_event % 3600000 < 60000) // it's a "round hour" (2 or more hours, in a minute resolution)
        snprintf(relative_temp, sizeof(relative_temp), "In %ld hours", alert_event / 3600000);
+  else // it's a non-round hours - h hours + m minutes
+       snprintf(relative_temp, sizeof(relative_temp), "In %ld hours %ld mins", alert_event/3600000, alert_event/60000-(alert_event/3600000*60));
 
   strncpy(timer_rec[num].relative_desc, relative_temp, sizeof(relative_temp));
 }
