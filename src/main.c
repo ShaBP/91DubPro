@@ -20,9 +20,11 @@ static uint8_t batteryPercent;
 
 static TextLayer *event_layer;
 static TextLayer *event_layer2; // from ModernCalendar
+static TextLayer *event_layer_loc;
 static bool status_showing = false; // from ModernCalendar
 static char event_text[21]; // from ModernCalendar
 static char event_text2[21]; // from ModernCalendar
+static char event_text_loc[21];
 static GBitmap *icon_status_1; // from ModernCalendar
 static GBitmap *icon_status_2; // from ModernCalendar
 static GBitmap *icon_status_3; // from ModernCalendar
@@ -31,6 +33,21 @@ static int event_status_display = 0; // from ModernCalendar
 // Timers - from ModernCalendar
 static AppTimer *display_timer;
 static AppTimer *vibrate_timer;
+
+// Steps:
+
+static TextLayer *steps_layer;
+static TextLayer *goal_layer;
+//static Layer *goal_percent_layer;
+static char steps[6], goal[6];
+static int goal_percent;
+static GBitmap *steps_image;
+static BitmapLayer *steps_image_layer;
+static GBitmap *goal_image;
+static BitmapLayer *goal_image_layer;
+static BitmapLayer *goal_fill_image_layer;
+static bool steps_avail = false;
+//static int goal_percent=0;
 
 /* removing settings
 typedef struct persist {
@@ -63,8 +80,8 @@ enum {
 };
 */
 
-static GBitmap *branding_mask_image;
-static BitmapLayer *branding_mask_layer;
+//static GBitmap *branding_mask_image;
+//static BitmapLayer *branding_mask_layer;
 
 static GBitmap *background_image;
 static BitmapLayer *background_layer;
@@ -155,7 +172,7 @@ const int TINY_IMAGE_RESOURCE_IDS[] = {
 
 void change_background() {
   gbitmap_destroy(background_image);
-  gbitmap_destroy(branding_mask_image);
+//  gbitmap_destroy(branding_mask_image);
 /* remove invert setting option
   if(settings.Invert) {
     background_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND_INVERT);
@@ -163,10 +180,10 @@ void change_background() {
   }
   else { */ 
     background_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BACKGROUND);
-    branding_mask_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BRANDING_MASK);
+//    branding_mask_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BRANDING_MASK);
 //  }  
-  bitmap_layer_set_bitmap(branding_mask_layer, branding_mask_image);
-  layer_mark_dirty(bitmap_layer_get_layer(branding_mask_layer));
+//  bitmap_layer_set_bitmap(branding_mask_layer, branding_mask_image);
+//  layer_mark_dirty(bitmap_layer_get_layer(branding_mask_layer));
   
   bitmap_layer_set_bitmap(background_layer, background_image);
   layer_mark_dirty(bitmap_layer_get_layer(background_layer));
@@ -275,6 +292,13 @@ void battery_layer_update_callback(Layer *me, GContext* ctx) {
   graphics_fill_rect(ctx, GRect(2, 2, ((batteryPercent/100.0)*11.0), 5), 0, GCornerNone);
 }
 
+void goal_image_layer_update_callback(Layer *me, GContext* ctx) {        
+  //draw the goal achievement percentage
+  graphics_context_set_stroke_color(ctx, GColorWhite);
+  graphics_context_set_fill_color(ctx, GColorWhite);
+  graphics_fill_rect(ctx, GRect(2, 2, ((goal_percent/100.0)*28.0), 4), 0, GCornerNone);
+}
+
 unsigned short get_display_hour(unsigned short hour) {
   if (clock_is_24h_style()) {
     return hour;
@@ -373,11 +397,35 @@ static void savePersistentSettings() {
 */
 
 // Update Event text - from ModernCalendar
-void display_event_text(char *text, char *relative) {
+void display_event_text(char *text, char *relative, char *location) {
+  //app_log(APP_LOG_LEVEL_INFO, "main", 385, "Update Event text");
   strncpy(event_text2, relative, sizeof(event_text2));
   text_layer_set_text(event_layer2, event_text2);
   strncpy(event_text, text, sizeof(event_text));
   text_layer_set_text(event_layer, event_text);
+  strncpy(event_text_loc, location, sizeof(event_text_loc));
+  text_layer_set_text(event_layer_loc, event_text_loc);
+}
+
+void display_steps_text(int num_steps){
+  if (num_steps > -1){
+    steps_avail = true;
+    snprintf(steps, sizeof(steps), "%d", num_steps);
+    //snprintf(steps, sizeof(steps), "28888"); // testing...
+    text_layer_set_text(steps_layer, steps);
+    layer_set_hidden(text_layer_get_layer(steps_layer), false);
+    layer_set_hidden(bitmap_layer_get_layer(steps_image_layer), false);
+    layer_set_hidden(text_layer_get_layer(goal_layer), false);
+    layer_set_hidden(bitmap_layer_get_layer(goal_image_layer), false);
+  }
+}
+
+void display_goal_text(int goal_perc){
+  goal_percent = goal_perc;
+  snprintf(goal, sizeof(goal), "%d%%", goal_perc);  
+  //snprintf(goal, sizeof(goal), "100%%"); // testing...
+  text_layer_set_text(goal_layer, goal);
+  layer_mark_dirty(bitmap_layer_get_layer(goal_image_layer));
 }
 
 // Hides status icons. Call draw of default battery/bluetooth icons (which will show or hide icon based on set logic). 
@@ -385,11 +433,18 @@ void hide_status() {
 	status_showing = false;
   layer_set_hidden(text_layer_get_layer(event_layer), true);
   layer_set_hidden(text_layer_get_layer(event_layer2), true);
+  layer_set_hidden(text_layer_get_layer(event_layer_loc), true);
 //  layer_set_hidden(bitmap_layer_get_layer(meter_bar_layer), false);
   layer_set_hidden(bitmap_layer_get_layer(bluetooth_layer), false);
   layer_set_hidden(bitmap_layer_get_layer(battery_layer), false);
   layer_set_hidden(text_layer_get_layer(week_layer), false);
+  //layer_set_hidden(text_layer_get_layer(steps_layer), false);
+  //layer_set_hidden(text_layer_get_layer(goal_layer), false);
+//  layer_set_hidden(goal_percent_layer, false);
   layer_set_hidden(bitmap_layer_get_layer(battery_image_layer), false);
+  //layer_set_hidden(bitmap_layer_get_layer(steps_image_layer), false);
+  //layer_set_hidden(bitmap_layer_get_layer(goal_image_layer), false);
+  //layer_set_hidden(bitmap_layer_get_layer(goal_fill_image_layer), false);
   layer_set_hidden(bitmap_layer_get_layer(time_format_layer), false);
   layer_set_hidden(bitmap_layer_get_layer(day_name_layer), false);
   layer_set_hidden(event_status_layer, false);
@@ -403,7 +458,9 @@ void hide_status() {
 
 // Shows status icons. Call draw of default battery/bluetooth icons (which will show or hide icon based on set logic).
 void show_status() {
+  //app_log(APP_LOG_LEVEL_INFO, "main", 453, "entered show_status");
   if (event_status_display != STATUS_ALERT_SET) { // in case there is no event to display - do nothing
+    //app_log(APP_LOG_LEVEL_INFO, "main", 455, "event_status_display!=STATUS_ALERT_SET so do nothing");
     return;
   }
   if (status_showing){
@@ -424,12 +481,19 @@ void show_status() {
     layer_set_hidden(bitmap_layer_get_layer(battery_percent_layers[i]), true);
   }
   layer_set_hidden(text_layer_get_layer(week_layer), true);
+  //layer_set_hidden(bitmap_layer_get_layer(steps_image_layer), true);
+  //layer_set_hidden(bitmap_layer_get_layer(goal_image_layer), true);
+  //layer_set_hidden(bitmap_layer_get_layer(goal_fill_image_layer), true);
+  //layer_set_hidden(text_layer_get_layer(steps_layer), true);
+  //layer_set_hidden(text_layer_get_layer(goal_layer), true);
+//  layer_set_hidden(goal_percent_layer, true);
 //  text_layer_set_text(event_layer2, "In 32 minutes"); // to be removed (just to test)
 //  text_layer_set_text(event_layer, "Test event"); // to be removed (just to test)
   layer_set_hidden(text_layer_get_layer(event_layer), false);
   layer_set_hidden(text_layer_get_layer(event_layer2), false);
+  layer_set_hidden(text_layer_get_layer(event_layer_loc), false);
 	// 4 Sec timer then call "hide_status". Cancels previous timer if another show_status is called within the 4000ms
-	app_timer_cancel(display_timer);
+	//app_timer_cancel(display_timer);
 	display_timer = app_timer_register(4000, hide_status, NULL);
 }
 
@@ -439,17 +503,30 @@ void tap_handler(AccelAxisType axis, int32_t direction) {
 	show_status();	
 }
 
+/*
+void goal_percent_layer_update_callback(Layer *layer, GContext *ctx) {
+  
+  graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+	//graphics_draw_line	(ctx, GPoint(0, 0), GPoint(120*goal_percent/100, 0));	
+  graphics_draw_line	(ctx, GPoint(0, 0), GPoint(120, 0));
+}
+*/
+
 // Status icon callback handler - from ModernCalendar
 void event_status_layer_update_callback(Layer *layer, GContext *ctx) {
   
   graphics_context_set_compositing_mode(ctx, GCompOpAssign);
+  //app_log(APP_LOG_LEVEL_INFO, "main", 494, "event status layer update callback entered");
 	
   if (event_status_display == STATUS_REQUEST) {
      graphics_draw_bitmap_in_rect(ctx, icon_status_1, GRect(0, 0, 17, 9));
+    //app_log(APP_LOG_LEVEL_INFO, "main", 498, "event status layer update - status request");
   } else if (event_status_display == STATUS_REPLY) {
+    //app_log(APP_LOG_LEVEL_INFO, "main", 500, "event status layer update - status reply");
      graphics_draw_bitmap_in_rect(ctx, icon_status_2, GRect(0, 0, 17, 9));
   } else if (event_status_display == STATUS_ALERT_SET) {
-     graphics_draw_bitmap_in_rect(ctx, icon_status_3, GRect(0, 0, 17, 9));
+    //app_log(APP_LOG_LEVEL_INFO, "main", 503, "event status layer update - alert set");
+    graphics_draw_bitmap_in_rect(ctx, icon_status_3, GRect(0, 0, 17, 9));
   }
   // graphics_draw_bitmap_in_rect(ctx, icon_status_3, GRect(0, 0, 17, 9)); // remove remark to test graphics, remark when working!
 }
@@ -538,9 +615,53 @@ static void init(void) {
   text_layer_set_font(week_layer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	layer_add_child(window_layer, text_layer_get_layer(week_layer));
   
+  // steps layer (ShaBP)
+  steps_layer = text_layer_create(GRect(20, 0, 48, 18));
+  text_layer_set_text_color(steps_layer, GColorWhite);
+	text_layer_set_text_alignment(steps_layer, GTextAlignmentLeft);
+  text_layer_set_background_color(steps_layer, GColorClear);
+  text_layer_set_font(steps_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+	layer_add_child(window_layer, text_layer_get_layer(steps_layer));
+  layer_set_hidden(text_layer_get_layer(steps_layer), true);
+  
+  steps_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_STEPS);
+  steps_image_layer = bitmap_layer_create(GRect(9, 4, 9, 14));
+  bitmap_layer_set_bitmap(steps_image_layer, steps_image);
+  layer_add_child(window_layer, bitmap_layer_get_layer(steps_image_layer));
+  layer_set_hidden(bitmap_layer_get_layer(steps_image_layer), true);
+  
+  // Goal percentage layer (ShaBP)
+/*
+  goal_percent_layer = layer_create(GRect(12, 50, 120, 1));
+  layer_set_update_proc(goal_percent_layer, goal_percent_layer_update_callback);
+  layer_add_child(window_get_root_layer(window), goal_percent_layer);
+*/
+  // steps goal layer (ShaBP)
+  goal_layer = text_layer_create(GRect(66, 0, 34, 18));
+  text_layer_set_text_color(goal_layer, GColorWhite);
+	text_layer_set_text_alignment(goal_layer, GTextAlignmentRight);
+  text_layer_set_background_color(goal_layer, GColorClear);
+  text_layer_set_font(goal_layer, fonts_get_system_font(FONT_KEY_GOTHIC_18));
+	layer_add_child(window_layer, text_layer_get_layer(goal_layer));
+  layer_set_hidden(text_layer_get_layer(goal_layer), true);
+  
+  goal_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_GOAL);
+  GRect frame_goal = (GRect) {
+    .origin = { .x = 103, .y = 8 },
+    .size = goal_image->bounds.size
+  };
+  goal_image_layer = bitmap_layer_create(frame_goal);
+  goal_fill_image_layer = bitmap_layer_create(frame_goal);
+  bitmap_layer_set_bitmap(goal_image_layer, goal_image);
+  layer_set_update_proc(bitmap_layer_get_layer(goal_fill_image_layer), goal_image_layer_update_callback);
+  layer_set_hidden(bitmap_layer_get_layer(goal_image_layer), true);
+  
+  layer_add_child(window_layer, bitmap_layer_get_layer(goal_image_layer));
+  layer_add_child(window_layer, bitmap_layer_get_layer(goal_fill_image_layer));
+
   //time format
   GRect frame5 = (GRect) {
-    .origin = { .x = 17, .y = 68 },
+    .origin = { .x = 12, .y = 68 },
     .size = {.w = 19, .h = 8}
   };
   time_format_layer = bitmap_layer_create(frame5);
@@ -568,7 +689,8 @@ static void init(void) {
     battery_percent_layers[i] = bitmap_layer_create(dummy_frame);
     layer_add_child(window_layer, bitmap_layer_get_layer(battery_percent_layers[i]));
   }
-    
+
+/*  
   //mask the pebble branding
   GRect framemask = (GRect) {
     .origin = { .x = 0, .y = 0 },
@@ -579,10 +701,11 @@ static void init(void) {
   branding_mask_image = gbitmap_create_with_resource(RESOURCE_ID_IMAGE_BRANDING_MASK);
   bitmap_layer_set_bitmap(branding_mask_layer, branding_mask_image);
   layer_set_hidden(bitmap_layer_get_layer(branding_mask_layer), false);// changed by ShaBP from: !settings.BrandingMask);
+*/
   
   toggle_bluetooth_icon(bluetooth_connection_service_peek());
   update_battery(battery_state_service_peek());
-/*
+/*  
   Tuplet initial_values[] = {
     TupletInteger(BLINK_KEY, settings.Blink),
     TupletInteger(INVERT_KEY, settings.Invert),
@@ -615,7 +738,7 @@ static void init(void) {
   layer_add_child(window_get_root_layer(window), event_status_layer);
 
   // Event layers init - from ModernCalendar 
-  event_layer = text_layer_create(GRect(10, 55, 124, 20));
+  event_layer = text_layer_create(GRect(10, 49, 124, 19));
   text_layer_set_text_color(event_layer, GColorBlack);
   text_layer_set_text_alignment(event_layer, GTextAlignmentCenter);
   text_layer_set_background_color(event_layer, GColorClear);
@@ -623,7 +746,7 @@ static void init(void) {
   layer_add_child(window_get_root_layer(window), text_layer_get_layer(event_layer));
 	layer_set_hidden(text_layer_get_layer(event_layer), true);
 
-  event_layer2 = text_layer_create(GRect(10, 38, 124, 20));
+  event_layer2 = text_layer_create(GRect(10, 33, 124, 18));
   text_layer_set_text_color(event_layer2, GColorBlack);
   text_layer_set_text_alignment(event_layer2, GTextAlignmentCenter);
   text_layer_set_background_color(event_layer2, GColorClear);
@@ -631,11 +754,20 @@ static void init(void) {
   layer_add_child(window_get_root_layer(window), text_layer_get_layer(event_layer2));
 	layer_set_hidden(text_layer_get_layer(event_layer2), true);
   
+  event_layer_loc = text_layer_create(GRect(10, 66, 124, 14));
+  text_layer_set_text_color(event_layer_loc, GColorBlack);
+  text_layer_set_text_alignment(event_layer_loc, GTextAlignmentCenter);
+  text_layer_set_background_color(event_layer_loc, GColorClear);
+  text_layer_set_font(event_layer_loc, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+  layer_add_child(window_get_root_layer(window), text_layer_get_layer(event_layer_loc));
+	layer_set_hidden(text_layer_get_layer(event_layer_loc), true);
+
   // Message inbox and Calendar init - from ModernCalendar
   app_message_register_inbox_received(received_message);
   app_message_open(124, 256);
 
   calendar_init();
+  steps_init();
 
   tick_timer_service_subscribe(MINUTE_UNIT, handle_tick);
   bluetooth_connection_service_subscribe(bluetooth_connection_callback);
@@ -660,12 +792,14 @@ static void deinit(void) {
   bitmap_layer_destroy(background_layer);
   gbitmap_destroy(background_image);
   background_image = NULL;
-  
+
+  /*
   layer_remove_from_parent(bitmap_layer_get_layer(branding_mask_layer));
   bitmap_layer_destroy(branding_mask_layer);
   gbitmap_destroy(branding_mask_image);
   branding_mask_image = NULL;
-
+  */
+  
   layer_remove_from_parent(bitmap_layer_get_layer(separator_layer));
   bitmap_layer_destroy(separator_layer);
   gbitmap_destroy(separator_image);
@@ -705,6 +839,26 @@ static void deinit(void) {
   text_layer_destroy(week_layer);
   week_layer = NULL;
 	
+  layer_remove_from_parent(text_layer_get_layer(steps_layer));
+  text_layer_destroy(steps_layer);
+  steps_layer = NULL;
+  layer_remove_from_parent(bitmap_layer_get_layer(steps_image_layer));
+  bitmap_layer_destroy(steps_image_layer);
+
+  /*
+  layer_remove_from_parent(goal_percent_layer);
+  layer_destroy(goal_percent_layer);
+  goal_percent_layer = NULL;
+*/
+  
+  layer_remove_from_parent(text_layer_get_layer(goal_layer));
+  text_layer_destroy(goal_layer);
+  goal_layer = NULL;
+  layer_remove_from_parent(bitmap_layer_get_layer(goal_image_layer));
+  bitmap_layer_destroy(goal_image_layer);
+  layer_remove_from_parent(bitmap_layer_get_layer(goal_fill_image_layer));
+  bitmap_layer_destroy(goal_fill_image_layer);
+
   // from ModernCalendar
   
   layer_remove_from_parent(text_layer_get_layer(event_layer));
@@ -714,6 +868,10 @@ static void deinit(void) {
   layer_remove_from_parent(text_layer_get_layer(event_layer2));
   text_layer_destroy(event_layer2);
   event_layer2 = NULL;
+	
+  layer_remove_from_parent(text_layer_get_layer(event_layer_loc));
+  text_layer_destroy(event_layer_loc);
+  event_layer_loc = NULL;
 	
   layer_remove_from_parent(event_status_layer);
   gbitmap_destroy(icon_status_1); 

@@ -37,13 +37,32 @@ typedef struct {
   char event_desc[21];
   bool active;
   char relative_desc[21];
+  char location[21];
 } TimerRecord;
 
 #define REQUEST_CALENDAR_INTERVAL_MS 600003
+#define REQUEST_STEPS_INTERVAL_MS 90000
+  
+#define REQUEST_STEP_COUNTER_KEY 29
+#define STEP_COUNTER_RESPONSE_KEY 30
+#define STEP_COUNTER_CHANGE_KEY 31
+
+typedef struct {
+  int number_of_steps;
+  int goal;
+  int goal_percentage;
+} StepCounter;
 
 void calendar_init();
+void steps_init();
 void handle_calendar_timer(void *cookie);
-void display_event_text(char *text, char *relative);
+void handle_steps_timer(void *cookie);
+void display_event_text(char *text, char *relative, char *location);
+void display_steps_text(int num_steps);
+void display_goal_text(int goal_perc);
+void show_status();
+//void display_goal_percent(int goal_perc);
+
 //void draw_date();
 void received_message(DictionaryIterator *received, void *context);
 void set_event_status(int new_status_display);

@@ -9,6 +9,16 @@
     "resources": {
         "media": [
             {
+                "file": "images/icon_goal.png",
+                "name": "IMAGE_GOAL",
+                "type": "png"
+            },
+            {
+                "file": "images/Walk.png",
+                "name": "IMAGE_STEPS",
+                "type": "png"
+            },
+            {
                 "file": "images/status3_new.png",
                 "name": "IMAGE_STATUS_3",
                 "type": "png"
@@ -21,11 +31,6 @@
             {
                 "file": "images/status1_new.png",
                 "name": "IMAGE_STATUS_1",
-                "type": "png"
-            },
-            {
-                "file": "images/branding-mask.png",
-                "name": "IMAGE_BRANDING_MASK",
                 "type": "png"
             },
             {
@@ -269,7 +274,7 @@
     "shortName": "91DubPro",
     "uuid": "07034ac2-ec47-4bff-93cd-4082d144472d",
     "versionCode": 10,
-    "versionLabel": "1.2",
+    "versionLabel": "2.0",
     "watchapp": {
         "watchface": true
     }
