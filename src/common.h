@@ -47,7 +47,7 @@ typedef struct {
 #define STEP_COUNTER_RESPONSE_KEY 30
 #define STEP_COUNTER_CHANGE_KEY 31
 
-typedef struct {
+typedef struct __attribute__((__packed__)) {
   int number_of_steps;
   int goal;
   int goal_percentage;
